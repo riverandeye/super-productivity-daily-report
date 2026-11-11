@@ -226,6 +226,79 @@
         padding: var(--s2, 16px) 0;
         text-align: center;
       }
+      .modes {
+        display: inline-flex;
+        border: 1px solid var(--divider-color);
+        border-radius: var(--radius-pill, 999px);
+        overflow: hidden;
+      }
+      .modes button {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--text-color);
+        padding: 3px 12px;
+        font: inherit;
+        font-size: var(--font-size-sm, 13px);
+        cursor: pointer;
+      }
+      .modes button + button {
+        border-left: 1px solid var(--divider-color);
+      }
+      .modes button.on {
+        background: var(--state-selected);
+        font-weight: var(--font-weight-semibold, 600);
+      }
+      .counts {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        white-space: nowrap;
+      }
+      .cell .top {
+        gap: 2px;
+      }
+      .total {
+        white-space: nowrap;
+      }
+      .pbadge {
+        font-size: var(--font-size-xs, 11px);
+        color: var(--text-color-muted);
+        border: 1px dashed var(--text-color-muted);
+        border-radius: var(--radius-pill, 999px);
+        padding: 0 5px;
+        white-space: nowrap;
+      }
+      .pbadge.overdue,
+      .tag.overdue {
+        color: var(--color-danger, #e53935);
+        border-color: var(--color-danger, #e53935);
+      }
+      .bars.planned span {
+        opacity: 0.55;
+      }
+      .cell.planned-only {
+        border-style: dashed;
+      }
+      .sec {
+        margin: var(--s, 8px) 0 2px;
+        font-size: var(--font-size-sm, 13px);
+        font-weight: var(--font-weight-semibold, 600);
+        color: var(--text-color-muted);
+      }
+      .item.planned .dot {
+        background: transparent !important;
+        border: 2px solid currentColor;
+        box-sizing: border-box;
+      }
+      .tag {
+        font-size: var(--font-size-xs, 11px);
+        border: 1px solid var(--divider-color);
+        border-radius: var(--radius-pill, 999px);
+        padding: 0 6px;
+        margin-left: 4px;
+        white-space: nowrap;
+      }
       .legend {
         display: flex;
         align-items: center;
@@ -250,6 +323,7 @@
         <h1 id="month-label"></h1>
         <button class="btn-text nav-btn" id="next">›</button>
         <button class="btn-outline" id="today"></button>
+        <span class="modes" id="modes" role="group"></span>
         <span class="spacer"></span>
         <span class="summary" id="summary"></span>
       </div>
@@ -347,7 +421,8 @@
           month: now.getMonth(),
           selectedKey: null,
           selectedProjects: new Set(),
-          index: { byDay: new Map(), projects: [] },
+          mode: 'both', // 'done' | 'planned' | 'both'
+          index: { byDay: new Map(), plannedByDay: new Map(), projects: [] },
           sig: null,
           dayOffsetMs: 0,
           todayKey: L.dateKeyOf(now.getFullYear(), now.getMonth(), now.getDate()),
@@ -369,7 +444,17 @@
         }
 
         function itemsFor(key) {
+          if (state.mode === 'planned') return [];
           return L.filterItems(state.index.byDay.get(key), state.selectedProjects);
+        }
+
+        function plannedFor(key) {
+          if (state.mode === 'done') return [];
+          return L.filterItems(state.index.plannedByDay.get(key), state.selectedProjects);
+        }
+
+        function isPast(key) {
+          return key < state.todayKey;
         }
 
         // ---------- data ----------
@@ -421,6 +506,7 @@
 
         // ---------- render ----------
         function render() {
+          renderModes();
           renderToolbar();
           renderFilters();
           renderCalendar();
@@ -434,16 +520,38 @@
           return keys;
         }
 
+        function renderModes() {
+          var box = $('modes');
+          box.replaceChildren();
+          [['done', 'MODE.DONE'], ['planned', 'MODE.PLANNED'], ['both', 'MODE.BOTH']].forEach(function (m) {
+            var b = el('button', state.mode === m[0] ? 'on' : '', t(m[1]));
+            b.type = 'button';
+            b.setAttribute('aria-pressed', String(state.mode === m[0]));
+            b.addEventListener('click', function () {
+              state.mode = m[0];
+              render();
+            });
+            box.appendChild(b);
+          });
+        }
+
         function renderToolbar() {
           $('month-label').textContent = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long' }).format(new Date(state.year, state.month, 1));
           var total = 0;
           var activeDays = 0;
+          var planned = 0;
           monthKeys().forEach(function (k) {
             var n = itemsFor(k).length;
             total += n;
             if (n) activeDays++;
+            planned += plannedFor(k).length;
           });
-          $('summary').textContent = t('SUMMARY', { count: total, days: activeDays });
+          $('summary').textContent =
+            state.mode === 'done'
+              ? t('SUMMARY', { count: total, days: activeDays })
+              : state.mode === 'planned'
+                ? t('SUMMARY_PLANNED', { count: planned })
+                : t('SUMMARY_BOTH', { count: total, planned: planned });
         }
 
         function renderFilters() {
@@ -461,7 +569,8 @@
             dot.style.background = p.color;
             b.appendChild(dot);
             b.appendChild(document.createTextNode(p.title));
-            b.appendChild(el('span', 'n', String(p.total)));
+            var n = state.mode === 'done' ? p.total : state.mode === 'planned' ? p.plannedTotal : p.total + '/' + p.plannedTotal;
+            b.appendChild(el('span', 'n', String(n)));
             b.title = t('FILTER.TOGGLE_HINT');
             b.addEventListener('click', function () {
               if (state.selectedProjects.has(p.id)) state.selectedProjects.delete(p.id);
@@ -482,28 +591,40 @@
           var max = 0;
           weeks.forEach(function (w) {
             w.forEach(function (c) {
-              if (c.inMonth) max = Math.max(max, itemsFor(c.key).length);
+              if (c.inMonth) max = Math.max(max, (state.mode === 'planned' ? plannedFor(c.key) : itemsFor(c.key)).length);
             });
           });
 
           weeks.forEach(function (week) {
             week.forEach(function (c) {
-              var items = itemsFor(c.key);
+              var planned = plannedFor(c.key);
+              var plannedView = state.mode === 'planned';
+              // The list that drives shading, dots and bars.
+              var items = plannedView ? planned : itemsFor(c.key);
+              var doneCount = plannedView ? 0 : items.length;
               var groups = L.countByProject(items);
               var cls = 'cell';
               if (!c.inMonth) cls += ' out';
               if (c.key === state.todayKey) cls += ' today';
               if (c.key === state.selectedKey) cls += ' sel';
+              if (plannedView && items.length) cls += ' planned-only';
               var cell = el('button', cls);
               cell.type = 'button';
-              cell.setAttribute('aria-label', t('CELL.ARIA', { date: c.key, count: items.length }));
+              cell.setAttribute('aria-label', t('CELL.ARIA', { date: c.key, count: doneCount, planned: planned.length }));
 
               var level = L.intensityLevel(items.length, max);
               if (level > 0) cell.style.background = tint(groups[0].color, LEVEL_ALPHA[level]);
 
               var top = el('div', 'top');
               top.appendChild(el('span', 'dnum', String(c.day)));
-              if (items.length) top.appendChild(el('span', 'total', t('CELL.COUNT', { count: items.length })));
+              var counts = el('span', 'counts');
+              if (items.length) counts.appendChild(el('span', 'total', t('CELL.COUNT', { count: items.length })));
+              if (state.mode === 'both' && planned.length) {
+                var pb = el('span', 'pbadge' + (isPast(c.key) ? ' overdue' : ''), '○' + planned.length);
+                pb.title = t('PLANNED_BADGE', { count: planned.length });
+                counts.appendChild(pb);
+              }
+              top.appendChild(counts);
               cell.appendChild(top);
 
               if (groups.length) {
@@ -520,7 +641,7 @@
                 if (groups.length > 3) lines.appendChild(el('div', 'pline', '+' + (groups.length - 3)));
                 cell.appendChild(lines);
 
-                var bars = el('div', 'bars');
+                var bars = el('div', 'bars' + (plannedView ? ' planned' : ''));
                 groups.forEach(function (g) {
                   var s = el('span');
                   s.style.flex = String(g.count);
@@ -570,34 +691,53 @@
             box.appendChild(el('div', 'sub', t('DETAIL.PICK_HINT')));
             return;
           }
-          var items = itemsFor(state.selectedKey);
-          box.appendChild(el('h2', null, fmtDayTitle(state.selectedKey)));
-          var groups = L.countByProject(items);
-          var sub = items.length
-            ? t('DETAIL.SUMMARY', { count: items.length, projects: groups.map(function (g) { return g.title + ' ' + g.count; }).join(', ') })
+          var key = state.selectedKey;
+          var done = itemsFor(key);
+          var planned = plannedFor(key);
+          box.appendChild(el('h2', null, fmtDayTitle(key)));
+          var all = done.concat(planned);
+          var groups = L.countByProject(done);
+          var sub = done.length
+            ? t('DETAIL.SUMMARY', { count: done.length, projects: groups.map(function (g) { return g.title + ' ' + g.count; }).join(', ') })
             : '';
           box.appendChild(el('div', 'sub', sub));
-          if (!items.length) {
-            box.appendChild(el('div', 'empty', t('DETAIL.EMPTY')));
+          if (!all.length) {
+            var emptyKey = state.mode === 'done' ? 'DETAIL.EMPTY' : state.mode === 'planned' ? 'DETAIL.EMPTY_PLANNED' : 'DETAIL.EMPTY_BOTH';
+            box.appendChild(el('div', 'empty', t(emptyKey)));
             return;
           }
+          if (done.length) {
+            if (state.mode === 'both') box.appendChild(el('div', 'sec', t('SECTION.DONE', { count: done.length })));
+            box.appendChild(itemList(done, false));
+          }
+          if (planned.length) {
+            if (state.mode === 'both') box.appendChild(el('div', 'sec', t('SECTION.PLANNED', { count: planned.length })));
+            box.appendChild(itemList(planned, true));
+          }
+        }
+
+        function itemList(items, isPlanned) {
+          var overdue = isPlanned && isPast(state.selectedKey);
           var ul = el('ul', 'items');
           items.forEach(function (it) {
-            var li = el('li', 'item');
+            var li = el('li', 'item' + (isPlanned ? ' planned' : ''));
             var dot = el('span', 'dot');
             dot.style.background = it.color;
+            dot.style.color = it.color;
             li.appendChild(dot);
             var path = el('span', 'path');
             it.path.forEach(function (part, i) {
               if (i > 0) path.appendChild(el('span', 'sep', '›'));
               path.appendChild(el('span', i < it.path.length - 1 ? 'crumb' : 'leaf', part));
             });
+            if (overdue) path.appendChild(el('span', 'tag overdue', t('OVERDUE')));
             li.appendChild(path);
-            li.appendChild(el('span', 'time', fmtTime(it.doneOn)));
+            var time = isPlanned ? (it.due ? fmtTime(it.due) : t('ALL_DAY')) : fmtTime(it.doneOn);
+            li.appendChild(el('span', 'time', time));
             li.title = it.path.join(' › ');
             ul.appendChild(li);
           });
-          box.appendChild(ul);
+          return ul;
         }
 
         // ---------- events ----------

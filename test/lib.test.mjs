@@ -90,3 +90,25 @@ test('signature changes when a task is completed', () => {
   assert.notEqual(a, b);
   assert.equal(a, L.signature(L.buildIndex([t], [], projects)));
 });
+
+test('planned: unfinished active tasks by dueWithTime or dueDay', () => {
+  const active = [
+    { id: 'P', title: 'Parent', isDone: false, projectId: 'P1', dueDay: '2026-11-20' },
+    { id: 'S1', title: 'timed', isDone: false, parentId: 'P', projectId: 'P1', dueWithTime: at(2026, 11, 20, 15) },
+    { id: 'S2', title: 'done one', isDone: true, doneOn: at(2026, 11, 12), parentId: 'P', projectId: 'P1', dueDay: '2026-11-20' },
+    { id: 'S3', title: 'no date', isDone: false, parentId: 'P', projectId: 'P1' },
+    { id: 'W', title: 'wont', isDone: false, wontDoOn: at(2026, 11, 1), projectId: 'P1', dueDay: '2026-11-20' },
+    { id: 'Q', title: 'early', isDone: false, projectId: 'P2', dueWithTime: at(2026, 11, 20, 9) },
+  ];
+  const archived = [{ id: 'A', title: 'archived undone', isDone: false, projectId: 'P1', dueDay: '2026-11-20' }];
+  const idx = L.buildIndex(active, archived, projects, 0);
+  const day = idx.plannedByDay.get('2026-11-20');
+  assert.deepEqual(day.map((i) => i.id), ['Q', 'S1', 'P']);
+  assert.deepEqual(day[1].path, ['English', 'Parent', 'timed']);
+  assert.equal(day[2].due, null);
+  assert.deepEqual(idx.byDay.get('2026-11-12').map((i) => i.id), ['S2']);
+  const p1 = idx.projects.find((p) => p.id === 'P1');
+  assert.equal(p1.total, 1);
+  assert.equal(p1.plannedTotal, 2);
+  assert.equal(L.plannedDateKey({ isDone: false, dueDay: 'bad' }), null);
+});

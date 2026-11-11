@@ -2,7 +2,7 @@
   "id": "daily-report",
   "name": "Daily Report",
   "manifestVersion": 1,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "minSupVersion": "20.0.0",
   "description": "A monthly calendar of the tasks and subtasks you checked off each day. Click a day to see what you finished, shown as project › task › subtask.",
   "author": "riverandeye",

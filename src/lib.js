@@ -70,10 +70,27 @@
     }
 
     var byDay = new Map();
+    var plannedByDay = new Map();
     var usedProjects = new Map();
+    var activeIds = new Set(
+      (activeTasks || []).map(function (t) {
+        return t && t.id;
+      }),
+    );
+
+    function useProject(project, field) {
+      var used = usedProjects.get(project.id);
+      if (!used) {
+        used = { id: project.id, title: project.title, color: project.color, total: 0, plannedTotal: 0 };
+        usedProjects.set(project.id, used);
+      }
+      used[field]++;
+    }
 
     byId.forEach(function (task) {
-      if (!isCountable(task)) return;
+      var isDoneItem = isCountable(task);
+      var plannedKey = !isDoneItem && activeIds.has(task.id) ? plannedDateKey(task, dayOffsetMs) : null;
+      if (!isDoneItem && !plannedKey) return;
       var parent = task.parentId ? byId.get(task.parentId) : null;
       // Subtasks inherit the parent's project; fall back to it if missing.
       var projectId = task.projectId || (parent && parent.projectId) || null;
@@ -81,6 +98,23 @@
       var path = [project.title];
       if (parent && parent.title) path.push(parent.title);
       path.push(task.title || labels.untitled);
+
+      if (plannedKey) {
+        var pItem = {
+          id: task.id,
+          title: task.title || labels.untitled,
+          path: path,
+          projectId: project.id,
+          projectTitle: project.title,
+          color: project.color,
+          due: typeof task.dueWithTime === 'number' && task.dueWithTime > 0 ? task.dueWithTime : null,
+          isSubTask: !!task.parentId,
+        };
+        if (!plannedByDay.has(plannedKey)) plannedByDay.set(plannedKey, []);
+        plannedByDay.get(plannedKey).push(pItem);
+        useProject(project, 'plannedTotal');
+        return;
+      }
 
       var item = {
         id: task.id,
@@ -96,17 +130,21 @@
       if (!byDay.has(key)) byDay.set(key, []);
       byDay.get(key).push(item);
 
-      var used = usedProjects.get(project.id);
-      if (!used) {
-        used = { id: project.id, title: project.title, color: project.color, total: 0 };
-        usedProjects.set(project.id, used);
-      }
-      used.total++;
+      useProject(project, 'total');
     });
 
     byDay.forEach(function (items) {
       items.sort(function (a, b) {
         return a.doneOn - b.doneOn;
+      });
+    });
+    // Timed items first (by time), then the rest by path.
+    plannedByDay.forEach(function (items) {
+      items.sort(function (a, b) {
+        if (a.due && b.due) return a.due - b.due;
+        if (a.due) return -1;
+        if (b.due) return 1;
+        return a.path.join('\u0000').localeCompare(b.path.join('\u0000'));
       });
     });
 
@@ -116,12 +154,27 @@
     projectMap.forEach(function (p) {
       var used = usedProjects.get(p.id);
       if (!p.isArchived || used) {
-        filterProjects.push({ id: p.id, title: p.title, color: p.color, total: used ? used.total : 0 });
+        filterProjects.push({
+          id: p.id,
+          title: p.title,
+          color: p.color,
+          total: used ? used.total : 0,
+          plannedTotal: used ? used.plannedTotal : 0,
+        });
       }
     });
     if (usedProjects.has(NO_PROJECT_ID)) filterProjects.push(usedProjects.get(NO_PROJECT_ID));
 
-    return { byDay: byDay, projects: filterProjects };
+    return { byDay: byDay, plannedByDay: plannedByDay, projects: filterProjects };
+  }
+
+  /** Planned day of an unfinished task: its scheduled time if it has one,
+   *  otherwise its planned day (dueDay, already a logical-day string). */
+  function plannedDateKey(task, dayOffsetMs) {
+    if (!task || task.isDone || task.wontDoOn) return null;
+    if (typeof task.dueWithTime === 'number' && task.dueWithTime > 0) return toDateKey(task.dueWithTime, dayOffsetMs);
+    if (typeof task.dueDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(task.dueDay)) return task.dueDay;
+    return null;
   }
 
   /** Items of a day, limited to the selected projects (null/empty = all). */
@@ -194,9 +247,14 @@
         return i.id + '@' + i.doneOn + '/' + i.path.join('>') + '/' + i.color;
       }).join(','));
     });
+    (index.plannedByDay || new Map()).forEach(function (items, key) {
+      parts.push('p' + key + ':' + items.map(function (i) {
+        return i.id + '@' + i.due + '/' + i.path.join('>') + '/' + i.color;
+      }).join(','));
+    });
     parts.sort();
     parts.push(index.projects.map(function (p) {
-      return p.id + '=' + p.title + '=' + p.color;
+      return p.id + '=' + p.title + '=' + p.color + '=' + p.total + '=' + p.plannedTotal;
     }).join(','));
     return parts.join('|');
   }
@@ -206,6 +264,7 @@
     toDateKey: toDateKey,
     dateKeyOf: dateKeyOf,
     isCountable: isCountable,
+    plannedDateKey: plannedDateKey,
     buildIndex: buildIndex,
     filterItems: filterItems,
     countByProject: countByProject,

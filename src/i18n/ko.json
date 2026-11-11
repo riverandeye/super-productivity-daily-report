@@ -13,7 +13,7 @@
   },
   "CELL": {
     "COUNT": "{{count}}개",
-    "ARIA": "{{date}} 완료 {{count}}개",
+    "ARIA": "{{date}} 완료 {{count}}개, 계획 {{planned}}개",
     "PROJECT_COUNT": "{{project}} {{count}}개"
   },
   "LEGEND": {
@@ -25,11 +25,27 @@
     "PICK_HINT": "캘린더에서 날짜를 누르면 그날 완료한 항목이 나와요.",
     "SUMMARY": "완료 {{count}}개 · {{projects}}",
     "EMPTY": "이날 완료한 항목이 없어요.",
-    "LOAD_ERROR": "태스크를 불러오지 못했어요: {{error}}"
+    "LOAD_ERROR": "태스크를 불러오지 못했어요: {{error}}",
+    "EMPTY_PLANNED": "이날 계획한 항목이 없어요.",
+    "EMPTY_BOTH": "이날 완료하거나 계획한 항목이 없어요."
   },
   "LABEL": {
     "NO_PROJECT": "프로젝트 없음",
     "DELETED_PROJECT": "(삭제된 프로젝트)",
     "UNTITLED": "(제목 없음)"
-  }
+  },
+  "MODE": {
+    "DONE": "완료",
+    "PLANNED": "계획",
+    "BOTH": "모두"
+  },
+  "SUMMARY_PLANNED": "이번 달 계획 {{count}}개",
+  "SUMMARY_BOTH": "이번 달 완료 {{count}}개 · 계획 {{planned}}개",
+  "SECTION": {
+    "DONE": "완료 ({{count}})",
+    "PLANNED": "계획 ({{count}})"
+  },
+  "PLANNED_BADGE": "계획 {{count}}개",
+  "OVERDUE": "밀림",
+  "ALL_DAY": "시간 미정"
 }

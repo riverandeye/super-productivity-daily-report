@@ -13,7 +13,7 @@
   },
   "CELL": {
     "COUNT": "{{count}}",
-    "ARIA": "{{date}}: {{count}} done",
+    "ARIA": "{{date}}: {{count}} done, {{planned}} planned",
     "PROJECT_COUNT": "{{project}}: {{count}}"
   },
   "LEGEND": {
@@ -25,11 +25,27 @@
     "PICK_HINT": "Click a day in the calendar to see what you finished that day.",
     "SUMMARY": "{{count}} done · {{projects}}",
     "EMPTY": "Nothing finished on this day.",
-    "LOAD_ERROR": "Could not load tasks: {{error}}"
+    "LOAD_ERROR": "Could not load tasks: {{error}}",
+    "EMPTY_PLANNED": "Nothing planned for this day.",
+    "EMPTY_BOTH": "Nothing done or planned on this day."
   },
   "LABEL": {
     "NO_PROJECT": "No project",
     "DELETED_PROJECT": "(deleted project)",
     "UNTITLED": "(untitled)"
-  }
+  },
+  "MODE": {
+    "DONE": "Done",
+    "PLANNED": "Planned",
+    "BOTH": "Both"
+  },
+  "SUMMARY_PLANNED": "{{count}} planned this month",
+  "SUMMARY_BOTH": "{{count}} done · {{planned}} planned this month",
+  "SECTION": {
+    "DONE": "Done ({{count}})",
+    "PLANNED": "Planned ({{count}})"
+  },
+  "PLANNED_BADGE": "{{count}} planned",
+  "OVERDUE": "Overdue",
+  "ALL_DAY": "Any time"
 }
