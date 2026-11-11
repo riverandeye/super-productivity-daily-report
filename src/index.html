@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,13 +9,6 @@
       .page {
         max-width: 1200px;
         margin: 0 auto;
-      }
-      .app-title {
-        font-size: var(--font-size-sm, 13px);
-        font-weight: var(--font-weight-semibold, 600);
-        color: var(--text-color-muted);
-        letter-spacing: 0.02em;
-        margin-bottom: 2px;
       }
       .toolbar {
         display: flex;
@@ -252,12 +245,11 @@
   </head>
   <body>
     <main class="page">
-      <div class="app-title">Daily Report</div>
       <div class="toolbar">
-        <button class="btn-text nav-btn" id="prev" title="이전 달" aria-label="이전 달">‹</button>
+        <button class="btn-text nav-btn" id="prev">‹</button>
         <h1 id="month-label"></h1>
-        <button class="btn-text nav-btn" id="next" title="다음 달" aria-label="다음 달">›</button>
-        <button class="btn-outline" id="today">오늘</button>
+        <button class="btn-text nav-btn" id="next">›</button>
+        <button class="btn-outline" id="today"></button>
         <span class="spacer"></span>
         <span class="summary" id="summary"></span>
       </div>
@@ -277,7 +269,76 @@
       (function () {
         'use strict';
         var L = window.DailyReportLib;
-        var WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+        // English strings, inlined from i18n/en.json at build time. Used until
+        // (or if) PluginAPI.translate answers.
+        var EN = /* @inline-json i18n/en.json */ {};
+        var STR = flatten(EN, '', {});
+        var locale = 'en';
+        var WEEKDAYS = [];
+
+        function flatten(obj, prefix, out) {
+          Object.keys(obj).forEach(function (k) {
+            var v = obj[k];
+            if (v && typeof v === 'object') flatten(v, prefix + k + '.', out);
+            else out[prefix + k] = String(v);
+          });
+          return out;
+        }
+
+        function t(key, params) {
+          var s = STR[key] != null ? STR[key] : key;
+          return s.replace(/\{\{(\w+)\}\}/g, function (m, k) {
+            return params && k in params ? String(params[k]) : m;
+          });
+        }
+
+        function labels() {
+          return { noProject: t('LABEL.NO_PROJECT'), deletedProject: t('LABEL.DELETED_PROJECT'), untitled: t('LABEL.UNTITLED') };
+        }
+
+        function computeWeekdays() {
+          var f = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+          WEEKDAYS = [];
+          // 2026-11-01 is a Sunday.
+          for (var i = 0; i < 7; i++) WEEKDAYS.push(f.format(new Date(2026, 10, 1 + i)));
+        }
+
+        async function loadStrings() {
+          try {
+            if (typeof PluginAPI.getCurrentLanguage === 'function') {
+              var lang = await PluginAPI.getCurrentLanguage();
+              if (lang) locale = lang;
+            }
+          } catch (e) {
+            console.warn('[daily-report] getCurrentLanguage failed', e);
+          }
+          try {
+            Intl.DateTimeFormat.supportedLocalesOf([locale]);
+          } catch (e) {
+            locale = 'en';
+          }
+          document.documentElement.lang = locale;
+          var keys = Object.keys(flatten(EN, '', {}));
+          var next = flatten(EN, '', {});
+          if (typeof PluginAPI.translate === 'function') {
+            await Promise.all(keys.map(async function (k) {
+              try {
+                var v = await PluginAPI.translate(k);
+                if (typeof v === 'string' && v && v !== k) next[k] = v;
+              } catch (e) {
+                /* keep English */
+              }
+            }));
+          }
+          STR = next;
+          computeWeekdays();
+          $('prev').title = t('NAV.PREV');
+          $('prev').setAttribute('aria-label', t('NAV.PREV'));
+          $('next').title = t('NAV.NEXT');
+          $('next').setAttribute('aria-label', t('NAV.NEXT'));
+          $('today').textContent = t('NAV.TODAY');
+          document.title = t('TITLE');
+        }
         var LEVEL_ALPHA = [0, 14, 28, 44, 62];
 
         var now = new Date();
@@ -335,7 +396,7 @@
             }),
             PluginAPI.getAllProjects(),
           ]);
-          var index = L.buildIndex(res[0], res[1], res[2], state.dayOffsetMs);
+          var index = L.buildIndex(res[0], res[1], res[2], state.dayOffsetMs, labels());
           var sig = L.signature(index) + '#' + state.todayKey;
           if (!force && sig === state.sig) return;
           state.sig = sig;
@@ -374,7 +435,7 @@
         }
 
         function renderToolbar() {
-          $('month-label').textContent = state.year + '년 ' + (state.month + 1) + '월';
+          $('month-label').textContent = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long' }).format(new Date(state.year, state.month, 1));
           var total = 0;
           var activeDays = 0;
           monthKeys().forEach(function (k) {
@@ -382,13 +443,13 @@
             total += n;
             if (n) activeDays++;
           });
-          $('summary').textContent = '이번 달 완료 ' + total + '개 · 활동한 날 ' + activeDays + '일';
+          $('summary').textContent = t('SUMMARY', { count: total, days: activeDays });
         }
 
         function renderFilters() {
           var box = $('filters');
           box.replaceChildren();
-          var all = el('button', 'fchip' + (state.selectedProjects.size === 0 ? ' on' : ''), '전체');
+          var all = el('button', 'fchip' + (state.selectedProjects.size === 0 ? ' on' : ''), t('FILTER.ALL'));
           all.addEventListener('click', function () {
             state.selectedProjects.clear();
             render();
@@ -401,7 +462,7 @@
             b.appendChild(dot);
             b.appendChild(document.createTextNode(p.title));
             b.appendChild(el('span', 'n', String(p.total)));
-            b.title = '클릭: 이 프로젝트 켜기/끄기';
+            b.title = t('FILTER.TOGGLE_HINT');
             b.addEventListener('click', function () {
               if (state.selectedProjects.has(p.id)) state.selectedProjects.delete(p.id);
               else state.selectedProjects.add(p.id);
@@ -435,14 +496,14 @@
               if (c.key === state.selectedKey) cls += ' sel';
               var cell = el('button', cls);
               cell.type = 'button';
-              cell.setAttribute('aria-label', c.key + ' 완료 ' + items.length + '개');
+              cell.setAttribute('aria-label', t('CELL.ARIA', { date: c.key, count: items.length }));
 
               var level = L.intensityLevel(items.length, max);
               if (level > 0) cell.style.background = tint(groups[0].color, LEVEL_ALPHA[level]);
 
               var top = el('div', 'top');
               top.appendChild(el('span', 'dnum', String(c.day)));
-              if (items.length) top.appendChild(el('span', 'total', items.length + '개'));
+              if (items.length) top.appendChild(el('span', 'total', t('CELL.COUNT', { count: items.length })));
               cell.appendChild(top);
 
               if (groups.length) {
@@ -453,7 +514,7 @@
                   d.style.background = g.color;
                   line.appendChild(d);
                   line.appendChild(document.createTextNode(String(g.count)));
-                  line.title = g.title + ' ' + g.count + '개';
+                  line.title = t('CELL.PROJECT_COUNT', { project: g.title, count: g.count });
                   lines.appendChild(line);
                 });
                 if (groups.length > 3) lines.appendChild(el('div', 'pline', '+' + (groups.length - 3)));
@@ -483,43 +544,41 @@
           });
 
           var legend = $('legend');
-          legend.replaceChildren(el('span', null, '적음'));
+          legend.replaceChildren(el('span', null, t('LEGEND.LESS')));
           for (var lv = 1; lv <= 4; lv++) {
             var sw = el('span', 'sw');
             sw.style.background = tint('var(--c-primary)', LEVEL_ALPHA[lv]);
             legend.appendChild(sw);
           }
-          legend.appendChild(el('span', null, '많음'));
+          legend.appendChild(el('span', null, t('LEGEND.MORE')));
         }
 
         function fmtTime(ms) {
-          var d = new Date(ms);
-          return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+          return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms));
         }
 
         function fmtDayTitle(key) {
           var p = key.split('-');
-          var d = new Date(+p[0], +p[1] - 1, +p[2]);
-          return +p[1] + '월 ' + +p[2] + '일 (' + WEEKDAYS[d.getDay()] + ')';
+          return new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(+p[0], +p[1] - 1, +p[2]));
         }
 
         function renderDetail() {
           var box = $('detail');
           box.replaceChildren();
           if (!state.selectedKey) {
-            box.appendChild(el('h2', null, '날짜를 선택하세요'));
-            box.appendChild(el('div', 'sub', '캘린더에서 날짜를 누르면 그날 완료한 항목이 나와요.'));
+            box.appendChild(el('h2', null, t('DETAIL.PICK_TITLE')));
+            box.appendChild(el('div', 'sub', t('DETAIL.PICK_HINT')));
             return;
           }
           var items = itemsFor(state.selectedKey);
           box.appendChild(el('h2', null, fmtDayTitle(state.selectedKey)));
           var groups = L.countByProject(items);
           var sub = items.length
-            ? '완료 ' + items.length + '개 · ' + groups.map(function (g) { return g.title + ' ' + g.count; }).join(', ')
+            ? t('DETAIL.SUMMARY', { count: items.length, projects: groups.map(function (g) { return g.title + ' ' + g.count; }).join(', ') })
             : '';
           box.appendChild(el('div', 'sub', sub));
           if (!items.length) {
-            box.appendChild(el('div', 'empty', '이날 완료한 항목이 없어요.'));
+            box.appendChild(el('div', 'empty', t('DETAIL.EMPTY')));
             return;
           }
           var ul = el('ul', 'items');
@@ -576,6 +635,11 @@
                 console.warn('[daily-report] hook not available', h, e);
               }
             });
+          if (H.LANGUAGE_CHANGE) {
+            PluginAPI.registerHook(H.LANGUAGE_CHANGE, function () {
+              loadStrings().then(function () { return load(true); });
+            });
+          }
           if (H.DAY_CHANGE) {
             PluginAPI.registerHook(H.DAY_CHANGE, function (payload) {
               if (payload && payload.todayStr) state.todayKey = payload.todayStr;
@@ -586,6 +650,8 @@
         }
 
         async function init() {
+          computeWeekdays();
+          await loadStrings();
           state.selectedKey = state.todayKey;
           render();
           await loadDayContext();
@@ -597,7 +663,7 @@
             await load(true);
           } catch (e) {
             console.error('[daily-report] load failed', e);
-            $('detail').replaceChildren(el('div', 'empty', '태스크를 불러오지 못했어요: ' + (e && e.message ? e.message : e)));
+            $('detail').replaceChildren(el('div', 'empty', t('DETAIL.LOAD_ERROR', { error: e && e.message ? e.message : String(e) })));
           }
           setupHooks();
         }

@@ -1,0 +1,35 @@
+{
+  "TITLE": "Daily Report",
+  "OPEN": "Open Daily Report",
+  "NAV": {
+    "PREV": "Previous month",
+    "NEXT": "Next month",
+    "TODAY": "Today"
+  },
+  "SUMMARY": "{{count}} done this month · {{days}} active days",
+  "FILTER": {
+    "ALL": "All",
+    "TOGGLE_HINT": "Click to show or hide this project"
+  },
+  "CELL": {
+    "COUNT": "{{count}}",
+    "ARIA": "{{date}}: {{count}} done",
+    "PROJECT_COUNT": "{{project}}: {{count}}"
+  },
+  "LEGEND": {
+    "LESS": "Less",
+    "MORE": "More"
+  },
+  "DETAIL": {
+    "PICK_TITLE": "Pick a day",
+    "PICK_HINT": "Click a day in the calendar to see what you finished that day.",
+    "SUMMARY": "{{count}} done · {{projects}}",
+    "EMPTY": "Nothing finished on this day.",
+    "LOAD_ERROR": "Could not load tasks: {{error}}"
+  },
+  "LABEL": {
+    "NO_PROJECT": "No project",
+    "DELETED_PROJECT": "(deleted project)",
+    "UNTITLED": "(untitled)"
+  }
+}

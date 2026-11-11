@@ -2,7 +2,7 @@
 // The app adds a menu entry for the iframe view on its own; this adds a
 // header button and a (user-assignable) keyboard shortcut.
 PluginAPI.registerHeaderButton({
-  label: 'Daily Report',
+  label: PluginAPI.translate('TITLE'),
   icon: 'event_available',
   onClick: function () {
     PluginAPI.showIndexHtmlAsView();
@@ -11,7 +11,7 @@ PluginAPI.registerHeaderButton({
 
 PluginAPI.registerShortcut({
   id: 'open_done_calendar',
-  label: 'Daily Report 열기',
+  label: PluginAPI.translate('OPEN'),
   onExec: function () {
     PluginAPI.showIndexHtmlAsView();
   },

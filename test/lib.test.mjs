@@ -32,7 +32,7 @@ test('buildIndex: only done tasks with doneOn, path with parent, archive merged'
     { id: 'B1', title: 'Intro', isDone: true, doneOn: at(2026, 10, 1, 8), parentId: 'B', projectId: null },
     { id: 'A1', title: 'stale archived copy', isDone: true, doneOn: at(2025, 1, 1), parentId: 'A', projectId: 'P1' },
   ];
-  const idx = L.buildIndex(active, archived, projects, 0);
+  const idx = L.buildIndex(active, archived, projects, 0, { noProject: '프로젝트 없음' });
   const nov10 = idx.byDay.get('2026-11-10');
   assert.deepEqual(nov10.map((i) => i.id), ['N', 'A1']);
   assert.deepEqual(nov10[1].path, ['English', 'Reading', 'T2 Inference']);

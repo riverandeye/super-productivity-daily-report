@@ -2,9 +2,9 @@
   "id": "daily-report",
   "name": "Daily Report",
   "manifestVersion": 1,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "minSupVersion": "20.0.0",
-  "description": "체크(완료)한 날짜 기준으로 태스크·서브태스크를 월간 캘린더에 보여 줍니다. 날짜를 누르면 그날 완료한 항목을 프로젝트 › 태스크 › 서브태스크 경로로 볼 수 있어요.",
+  "description": "A monthly calendar of the tasks and subtasks you checked off each day. Click a day to see what you finished, shown as project › task › subtask.",
   "author": "riverandeye",
   "homepage": "https://github.com/riverandeye/super-productivity-daily-report",
   "hooks": [],
@@ -15,6 +15,9 @@
     "showIndexHtmlAsView"
   ],
   "dataSharing": [],
+  "i18n": {
+    "languages": ["en", "ko"]
+  },
   "iFrame": true,
   "sidePanel": false,
   "type": "standard",

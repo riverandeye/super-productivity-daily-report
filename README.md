@@ -5,7 +5,7 @@
 
 - 대상 앱: Super Productivity **v20.0.0 이상** (데스크톱에서 확인)
 - 저장소: https://github.com/riverandeye/super-productivity-daily-report
-- 설치 파일: [`release/daily-report-1.0.0.zip`](release/daily-report-1.0.0.zip)
+- 설치 파일: [`release/daily-report-1.1.0.zip`](release/daily-report-1.1.0.zip)
 
 ## 기능
 
@@ -21,13 +21,14 @@
   - 왼쪽 메뉴의 플러그인 항목 **Daily Report**(앱이 자동으로 추가)
   - 상단 헤더의 캘린더 아이콘 버튼
   - 키보드 단축키: Settings → Keyboard Shortcuts의 Plugin Shortcuts에서 "Daily Report 열기"에 원하는 키를 지정
+- **언어**: 앱 언어 설정을 따라갑니다(영어·한국어. 그 밖의 언어는 영어). 날짜·요일 표기도 그 언어 형식을 씁니다.
 - **자동 갱신**: 태스크 완료·수정·삭제, 프로젝트 변경, 동기화(`dataChanged` 훅), 날짜 변경 시 다시 그립니다.
 
 ## 설치
 
 1. 앱에서 **Settings → Plugins → Install Plugin**(버전에 따라 "Choose Plugin File"/"Upload Plugin")을 누릅니다.
-2. `release/daily-report-1.0.0.zip`을 고릅니다. 신뢰 경고가 나오면 확인합니다.
-3. 플러그인 목록에서 **Daily Report**가 켜져 있는지 확인한 뒤 메뉴나 헤더 버튼으로 엽니다.
+2. `release/daily-report-1.1.0.zip`을 고릅니다. 신뢰 경고가 나오면 확인합니다.
+3. 업로드한 플러그인은 **꺼진 상태로 설치**됩니다. 플러그인 목록에서 **Daily Report**의 토글을 켜야 왼쪽 메뉴와 헤더 버튼이 생깁니다.
 
 같은 `id`(`daily-report`)로 다시 올리면 기존 플러그인을 교체합니다.
 
@@ -67,6 +68,7 @@ npm run build   # dist/ 생성 + release/daily-report-<version>.zip
 | `src/manifest.json` | 플러그인 메타데이터 (`iFrame: true`, `minSupVersion: 20.0.0`) |
 | `src/plugin.js` | 헤더 버튼·단축키 등록 (앱 렌더러에서 실행) |
 | `src/index.html` | 캘린더 UI (iframe). 빌드 때 `lib.js`가 인라인됩니다 |
+| `src/i18n/*.json` | 번역(en, ko). 새 언어는 파일을 추가하고 manifest `i18n.languages`에 넣으세요 |
 | `src/lib.js` | 날짜 변환·인덱스·그리드 계산 (DOM 없음, 테스트 대상) |
 | `scripts/build.mjs` | 빌드·ZIP 스크립트 |
 

@@ -9,6 +9,7 @@
   var NO_PROJECT_ID = '__none__';
   var FALLBACK_COLORS = ['#7e57c2', '#26a69a', '#ffa726', '#8d6e63', '#78909c', '#d4e157'];
   var NO_PROJECT_COLOR = '#9e9e9e';
+  var DEFAULT_LABELS = { noProject: 'No project', deletedProject: '(deleted project)', untitled: '(untitled)' };
 
   function pad(n) {
     return String(n).padStart(2, '0');
@@ -36,8 +37,10 @@
    * @param {Array} archivedTasks result of PluginAPI.getArchivedTasks()
    * @param {Array} projects      result of PluginAPI.getAllProjects()
    * @param {number} dayOffsetMs  startOfNextDayDiffMs (0 if unknown)
+   * @param {object} labels      { noProject, deletedProject, untitled }
    */
-  function buildIndex(activeTasks, archivedTasks, projects, dayOffsetMs) {
+  function buildIndex(activeTasks, archivedTasks, projects, dayOffsetMs, labels) {
+    labels = Object.assign({}, DEFAULT_LABELS, labels || {});
     var byId = new Map();
     // Archived first, active second: if a task exists in both, the active copy wins.
     (archivedTasks || []).forEach(function (t) {
@@ -57,11 +60,11 @@
     });
 
     function projectInfo(projectId) {
-      if (!projectId) return { id: NO_PROJECT_ID, title: '프로젝트 없음', color: NO_PROJECT_COLOR };
+      if (!projectId) return { id: NO_PROJECT_ID, title: labels.noProject, color: NO_PROJECT_COLOR };
       var p = projectMap.get(projectId);
       if (p) return p;
       // Project deleted but tasks remain in the archive.
-      p = { id: projectId, title: '(삭제된 프로젝트)', color: NO_PROJECT_COLOR };
+      p = { id: projectId, title: labels.deletedProject, color: NO_PROJECT_COLOR };
       projectMap.set(projectId, p);
       return p;
     }
@@ -77,11 +80,11 @@
       var project = projectInfo(projectId);
       var path = [project.title];
       if (parent && parent.title) path.push(parent.title);
-      path.push(task.title || '(제목 없음)');
+      path.push(task.title || labels.untitled);
 
       var item = {
         id: task.id,
-        title: task.title || '(제목 없음)',
+        title: task.title || labels.untitled,
         path: path,
         projectId: project.id,
         projectTitle: project.title,
