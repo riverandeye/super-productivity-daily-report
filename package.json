@@ -1,0 +1,12 @@
+{
+  "name": "super-productivity-daily-report",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Super Productivity plugin: calendar of tasks by completion date",
+  "license": "MIT",
+  "repository": "github:riverandeye/super-productivity-daily-report",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}

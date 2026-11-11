@@ -1,0 +1,23 @@
+{
+  "id": "daily-report",
+  "name": "Daily Report",
+  "manifestVersion": 1,
+  "version": "1.0.0",
+  "minSupVersion": "20.0.0",
+  "description": "체크(완료)한 날짜 기준으로 태스크·서브태스크를 월간 캘린더에 보여 줍니다. 날짜를 누르면 그날 완료한 항목을 프로젝트 › 태스크 › 서브태스크 경로로 볼 수 있어요.",
+  "author": "riverandeye",
+  "homepage": "https://github.com/riverandeye/super-productivity-daily-report",
+  "hooks": [],
+  "permissions": [
+    "getTasks",
+    "getArchivedTasks",
+    "getAllProjects",
+    "showIndexHtmlAsView"
+  ],
+  "dataSharing": [],
+  "iFrame": true,
+  "sidePanel": false,
+  "type": "standard",
+  "assets": [],
+  "icon": "icon.svg"
+}
