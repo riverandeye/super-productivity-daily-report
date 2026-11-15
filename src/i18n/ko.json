@@ -6,13 +6,11 @@
     "NEXT": "다음 달",
     "TODAY": "오늘"
   },
-  "SUMMARY": "이번 달 완료 {{count}}개 · 활동한 날 {{days}}일",
   "FILTER": {
     "ALL": "전체",
     "TOGGLE_HINT": "클릭: 이 프로젝트 켜기/끄기"
   },
   "CELL": {
-    "COUNT": "{{count}}개",
     "ARIA": "{{date}} 완료 {{count}}개, 계획 {{planned}}개",
     "PROJECT_COUNT": "{{project}} {{count}}개"
   },
@@ -39,8 +37,6 @@
     "PLANNED": "계획",
     "BOTH": "모두"
   },
-  "SUMMARY_PLANNED": "이번 달 계획 {{count}}개",
-  "SUMMARY_BOTH": "이번 달 완료 {{count}}개 · 계획 {{planned}}개",
   "SECTION": {
     "DONE": "완료 ({{count}})",
     "PLANNED": "계획 ({{count}})"

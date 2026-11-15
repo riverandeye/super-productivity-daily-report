@@ -6,13 +6,11 @@
     "NEXT": "Next month",
     "TODAY": "Today"
   },
-  "SUMMARY": "{{count}} done this month · {{days}} active days",
   "FILTER": {
     "ALL": "All",
     "TOGGLE_HINT": "Click to show or hide this project"
   },
   "CELL": {
-    "COUNT": "{{count}}",
     "ARIA": "{{date}}: {{count}} done, {{planned}} planned",
     "PROJECT_COUNT": "{{project}}: {{count}}"
   },
@@ -39,8 +37,6 @@
     "PLANNED": "Planned",
     "BOTH": "Both"
   },
-  "SUMMARY_PLANNED": "{{count}} planned this month",
-  "SUMMARY_BOTH": "{{count}} done · {{planned}} planned this month",
   "SECTION": {
     "DONE": "Done ({{count}})",
     "PLANNED": "Planned ({{count}})"
