@@ -199,8 +199,62 @@
         padding: 6px 0;
         border-top: 1px solid var(--divider-color);
       }
-      .item .dot {
-        transform: translateY(1px);
+      .item .check {
+        width: 18px;
+        height: 18px;
+        min-width: 0;
+        min-height: 0; /* the app gives plugin buttons min-height: 40px */
+        line-height: 0;
+        flex: none;
+        align-self: flex-start;
+        margin-top: 1px;
+        padding: 0;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+      }
+      .item .check svg {
+        width: 12px;
+        height: 12px;
+        fill: none;
+        stroke: #fff;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0;
+      }
+      .item .check:hover:not(:disabled) svg {
+        opacity: 0.5;
+        stroke: currentColor;
+      }
+      .item .check.on {
+        background: currentColor;
+      }
+      .item .check.on svg,
+      .item .check.on:hover:not(:disabled) svg {
+        opacity: 1;
+        stroke: #fff;
+      }
+      .item .check.locked {
+        cursor: default;
+      }
+      .item .check:disabled {
+        opacity: 0.5;
+        cursor: progress;
+      }
+      .item .check.locked:disabled {
+        opacity: 1;
+        cursor: default;
+      }
+      .item .check:focus-visible {
+        outline: 2px solid var(--c-primary, #6495ed);
+        outline-offset: 2px;
       }
       .item .path {
         flex: 1;
@@ -285,11 +339,6 @@
         font-size: var(--font-size-sm, 13px);
         font-weight: var(--font-weight-semibold, 600);
         color: var(--text-color-muted);
-      }
-      .item.planned .dot {
-        background: transparent !important;
-        border: 2px solid currentColor;
-        box-sizing: border-box;
       }
       .tag {
         font-size: var(--font-size-xs, 11px);
@@ -721,10 +770,7 @@
           var ul = el('ul', 'items');
           items.forEach(function (it) {
             var li = el('li', 'item' + (isPlanned ? ' planned' : ''));
-            var dot = el('span', 'dot');
-            dot.style.background = it.color;
-            dot.style.color = it.color;
-            li.appendChild(dot);
+            li.appendChild(checkButton(it, isPlanned));
             var path = el('span', 'path');
             it.path.forEach(function (part, i) {
               if (i > 0) path.appendChild(el('span', 'sep', '›'));
@@ -738,6 +784,60 @@
             ul.appendChild(li);
           });
           return ul;
+        }
+
+        // ---------- check off ----------
+        var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+        var pending = {};
+
+        // Planned items can be checked off. Done items can be unchecked only
+        // when they were finished today: unchecking clears doneOn, so an older
+        // item would lose its date and move to today if checked again.
+        function checkButton(it, isPlanned) {
+          var b = el('button', 'check' + (isPlanned ? '' : ' on'));
+          b.type = 'button';
+          b.style.color = it.color;
+          b.innerHTML = CHECK_SVG;
+          var canUndo = !isPlanned && L.toDateKey(it.doneOn, state.dayOffsetMs) === state.todayKey;
+          var label = isPlanned ? t('CHECK.MARK_DONE') : canUndo ? t('CHECK.MARK_UNDONE') : t('CHECK.LOCKED');
+          b.title = label;
+          b.setAttribute('aria-label', label + ': ' + it.path.join(' › '));
+          if (!isPlanned && !canUndo) {
+            b.classList.add('locked');
+            b.disabled = true;
+            return b;
+          }
+          if (it.id in pending) b.disabled = true;
+          b.addEventListener('click', function (e) {
+            e.stopPropagation();
+            setDone(it.id, isPlanned, b);
+          });
+          return b;
+        }
+
+        async function setDone(id, toDone, btn) {
+          if (id in pending) return;
+          pending[id] = true;
+          btn.disabled = true;
+          btn.classList.toggle('on', toDone);
+          try {
+            await PluginAPI.updateTask(id, { isDone: toDone });
+          } catch (err) {
+            delete pending[id];
+            btn.disabled = false;
+            btn.classList.toggle('on', !toDone);
+            var msg = t('CHECK.FAILED', { error: (err && err.message) || String(err) });
+            try {
+              PluginAPI.showSnack({ msg: msg, type: 'ERROR' });
+            } catch (e2) {
+              console.error('[daily-report] ' + msg);
+            }
+            return;
+          }
+          delete pending[id];
+          await load(true).catch(function (e) {
+            console.error('[daily-report] refresh failed', e);
+          });
         }
 
         // ---------- events ----------

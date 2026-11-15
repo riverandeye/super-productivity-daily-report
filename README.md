@@ -4,7 +4,7 @@ A [Super Productivity](https://github.com/super-productivity/super-productivity)
 Unlike the built-in History view, which is based on tracked time, it answers "what did I finish that day?" — and, optionally, "what did I plan for that day?".
 
 - Requires Super Productivity **v20.0.0 or later** (tested on desktop)
-- Install file: [`release/daily-report-1.2.0.zip`](release/daily-report-1.2.0.zip)
+- Install file: [`release/daily-report-1.3.0.zip`](release/daily-report-1.3.0.zip)
 
 ## Features
 
@@ -20,6 +20,7 @@ Unlike the built-in History view, which is based on tracked time, it answers "wh
   - **Planned**: unfinished tasks, by the day they are planned for (dashed cells).
   - **Both** (default): done counts and shading, plus a dashed `○N` badge for planned items. The day panel lists **Done** and **Planned** separately.
   - Planned items on past days are still unfinished, so they are marked **Overdue** (red).
+- **Check off from the day panel**: click the circle in front of a planned item to mark it done (`PluginAPI.updateTask(id, { isDone: true })`). It is completed now, so it moves to today's **Done** list. Click the filled circle of an item you finished **today** to undo it; items finished on earlier days can't be unchecked here, because unchecking clears the completion date.
 - **Project filter**: click the chips at the top to show or hide projects (several at once). **All** clears the filter. The number on each chip is that project's total over all time (done, planned, or `done/planned` in Both).
 - **Opening it**
   - The **Daily Report** entry in the left menu (added by the app)
@@ -31,7 +32,7 @@ Unlike the built-in History view, which is based on tracked time, it answers "wh
 ## Install
 
 1. In the app, open **Settings → Plugins → Install Plugin** ("Choose Plugin File" on some versions).
-2. Pick `release/daily-report-1.2.0.zip` and confirm the trust warning.
+2. Pick `release/daily-report-1.3.0.zip` and confirm the trust warning.
 3. Uploaded plugins are **installed disabled**. Turn on the toggle next to **Daily Report** in the plugin list; the left-menu entry and the header button appear after that.
 
 Uploading again with the same `id` (`daily-report`) replaces the installed version.
@@ -44,7 +45,7 @@ Uploading again with the same `id` (`daily-report`) replaces the installed versi
 - Parent tasks and subtasks are **each counted once**. If finishing the last subtask also completes the parent, both appear on that day.
 - Project names and colors come from `getAllProjects()` (`title`, `theme.primary`). Tasks without a project show as "No project", and archived tasks of a deleted project as "(deleted project)".
 - **Planned** items are active (not archived) tasks that are not done and have a scheduled time (`dueWithTime`) or a planned day (`dueDay`, which is what Today, the Planner and "schedule" set). A scheduled time wins over the day. Timed items come first, by time; the rest show "Any time".
-- The plugin only reads data. It never changes anything and sends nothing off the device.
+- The plugin changes nothing on its own: the only write is the check-off you click in the day panel. It sends nothing off the device.
 
 ## Limitations
 

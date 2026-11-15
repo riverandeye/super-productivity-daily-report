@@ -2,9 +2,9 @@
   "id": "daily-report",
   "name": "Daily Report",
   "manifestVersion": 1,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "minSupVersion": "20.0.0",
-  "description": "A monthly calendar of the tasks and subtasks you checked off each day. Click a day to see what you finished, shown as project › task › subtask.",
+  "description": "A monthly calendar of the tasks and subtasks you checked off each day, plus what is planned. Click a day to see the list and check off planned items.",
   "author": "riverandeye",
   "homepage": "https://github.com/riverandeye/super-productivity-daily-report",
   "hooks": [],
@@ -12,11 +12,15 @@
     "getTasks",
     "getArchivedTasks",
     "getAllProjects",
+    "updateTask",
     "showIndexHtmlAsView"
   ],
   "dataSharing": [],
   "i18n": {
-    "languages": ["en", "ko"]
+    "languages": [
+      "en",
+      "ko"
+    ]
   },
   "iFrame": true,
   "sidePanel": false,

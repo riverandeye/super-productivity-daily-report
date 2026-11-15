@@ -47,5 +47,11 @@
   },
   "PLANNED_BADGE": "{{count}} planned",
   "OVERDUE": "Overdue",
-  "ALL_DAY": "Any time"
+  "ALL_DAY": "Any time",
+  "CHECK": {
+    "MARK_DONE": "Mark as done",
+    "MARK_UNDONE": "Mark as not done",
+    "LOCKED": "Finished on an earlier day. Only today's items can be unchecked here, because unchecking clears the completion date.",
+    "FAILED": "Could not update the task: {{error}}"
+  }
 }
